@@ -45,6 +45,38 @@ public class camera {
         
     }
     
+    public static class viewPoint implements Comparable<viewPoint>{
+        obj obj;
+        int value; // -1 for end +1 for start
+        float pos; // position on the x axis
+        
+        public viewPoint(obj obj, int value, float pos){
+            this.obj = obj;
+            this.value = value;
+            this.pos = pos;
+        }
+        
+        @Override
+        public int compareTo(viewPoint other){
+            if(this.pos > other.pos){
+                return 1;
+            }
+            else if(this.pos < other.pos){
+                return -1;
+            } 
+            else{
+                // if tie -1 comes first
+                return  other.value - this.value;
+            }
+        }
+        
+        @Override
+        public String toString(){
+            return "Obj: "+obj.index+" at "+ pos+" "+value;
+        }
+        
+    }
+    
     public static class wall{
         float height, openStart, openEnd;
         
@@ -70,14 +102,28 @@ public class camera {
         wall wall = new wall(wallDist,openingStart, openingEnd);
         
         obj[] objs = new obj[numObj];
+        boolean[] used = new boolean[numObj];
         
         
+        // edges of view window of objects
+        ArrayList vps = new ArrayList(numObj*2); 
+        
+        // load objs in into array
         for(int i = 0; i < numObj; i++){
             
-            obj temp = new obj(i,in.nextFloat(), in.nextFloat(), wall); 
-            objs[i] = temp;
-            System.out.println(temp);
+            obj tempObj = new obj(i,in.nextFloat(), in.nextFloat(), wall); 
+            objs[i] = tempObj;
+            used[i] = false;
+            
+            // get edges of viable area
+            viewPoint tempVp1 = new viewPoint(tempObj, 1, tempObj.viewStart );
+            viewPoint tempVp2 = new viewPoint(tempObj, -1, tempObj.viewEnd );
+            vps.add(tempVp1);
+            vps.add(tempVp2);
         }
+        Collections.sort(vps);
+        
+        
     
     
     
