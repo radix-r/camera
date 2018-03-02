@@ -7,6 +7,10 @@
  * To Do
  * ------
  * implement greedy alg for taking pictures.
+ * 
+ * remove unused items
+ * 
+ * error to many pictures sometimes. might have to do with precision of double double
  *  
  * 
  * 
@@ -114,7 +118,7 @@ public class camera {
         double openingEnd = in.nextDouble();
         
         wall wall = new wall(wallDist,openingStart, openingEnd);
-        System.out.println("Wall: "+wall.dist);
+        //System.out.println("Wall: "+wall.dist);
         
         obj[] objs = new obj[numObj];
         boolean[] used = new boolean[numObj];
@@ -133,7 +137,7 @@ public class camera {
             obj tempObj = new obj(i,x, y, wall); 
             objs[i] = tempObj;
             used[i] = false;
-            System.out.println(tempObj);
+            //System.out.println(tempObj);
             // get edges of viable area
             viewPoint tempVp1 = new viewPoint(tempObj, 1, tempObj.viewStart );
             viewPoint tempVp2 = new viewPoint(tempObj, -1, tempObj.viewEnd );
@@ -142,7 +146,11 @@ public class camera {
         }
         Collections.sort(vps);
         
-        //System.out.println(vps);
+        System.out.println(vps);
+        
+        int numPics = numPics(vps);
+        System.out.println(numPics);
+        
         
         
         
@@ -169,4 +177,40 @@ public class camera {
         return (y2-y1)/(x2-x1);
     }
     
+    /**
+     * Greedy alg ...
+     * 
+     * @param vps, array list of view points
+     * @return numPics number of pictures needed to photograph all objs
+     */
+    public static int numPics(ArrayList<viewPoint> vps){
+        if(vps.isEmpty()){
+            return 0;
+        }
+        
+        // where vp s not photographed will go
+        ArrayList remaining = new ArrayList();
+        
+        int len = vps.size();
+        int numVis = 0;
+        int maxVis = 0;
+        double pos = -Double.MAX_VALUE;
+        // find location where most objs in view
+        for(int i = 0;i < len; i++){
+            numVis += vps.get(i).value;
+            if(numVis > maxVis){
+                pos = vps.get(i).pos;
+            }        
+        }
+        
+        // mark ojs as used
+        for(int i = 0; i < len ; i++){
+            // if obj out of view add it to remaining
+            if (vps.get(i).obj.viewStart > pos || vps.get(i).obj.viewEnd < pos){
+                remaining.add(vps.get(i));
+            }           
+        } 
+        
+        return 1 + numPics(remaining);
+    }
 }
