@@ -23,12 +23,14 @@ import java.util.*;
  * form of <number of objects> <distance from axis of occluder> 
  * <cordinates of objects (y,x)> y coordinate comes first because in the 
  * specicifations for this problem the occluder and car path are horizontal however
- * to avoid issues with infininite slope I decided to make them vertical.
+ * to avoid issues with infinite slope I decided to make them vertical.
  * 
  * 
  */
 public class camera {
 
+    
+    public static double MINDIFF = .00001;
     /**
      * obj represents objects that we are trying to take pictures of
      * 
@@ -38,7 +40,7 @@ public class camera {
         int index;
         // cordinates
         double x,y;
-        // place on y axis (car's path) where obj is visabl e 
+        // place on y axis (car's path) where obj is visable 
         double viewStart, viewEnd;
         boolean aboveWall;
         
@@ -49,12 +51,12 @@ public class camera {
             this.y = y;
             // 
             this.aboveWall = this.x > wall.dist;
-            if(aboveWall){
+            if(this.aboveWall){
                 double slope1 = clacSlope(this.x, this.y, wall.dist, wall.openStart);
                 double slope2 = clacSlope(this.x, this.y, wall.dist, wall.openEnd);
                 // clac y intercepts
-                this.viewStart = -this.x*slope1 + this.y; 
-                this.viewEnd = -this.x*slope2 + this.y;
+                this.viewStart = -(this.x*slope1) + this.y; 
+                this.viewEnd = -(this.x*slope2) + this.y;
             }
             else{
                 viewStart = Double.NEGATIVE_INFINITY;
@@ -62,7 +64,6 @@ public class camera {
             }
         }
         
-        // give custom sorting method
         
         //to string function for printing
         @Override
@@ -85,7 +86,7 @@ public class camera {
         
         @Override
         public int compareTo(viewPoint other){
-            return Double.compare(this.pos, other.pos);
+            return compareDouble(this.pos, other.pos, MINDIFF);
         }
         
         @Override
@@ -120,8 +121,8 @@ public class camera {
         wall wall = new wall(wallDist,openingStart, openingEnd);
         //System.out.println("Wall: "+wall.dist);
         
-        obj[] objs = new obj[numObj];
-        boolean[] used = new boolean[numObj];
+        //obj[] objs = new obj[numObj];
+        //boolean[] used = new boolean[numObj];
         
         
         // edges of view window of objects
@@ -135,8 +136,8 @@ public class camera {
             x=in.nextDouble();
             
             obj tempObj = new obj(i,x, y, wall); 
-            objs[i] = tempObj;
-            used[i] = false;
+            //objs[i] = tempObj;
+            //used[i] = false;
             //System.out.println(tempObj);
             // get edges of viable area
             viewPoint tempVp1 = new viewPoint(tempObj, 1, tempObj.viewStart );
@@ -144,23 +145,13 @@ public class camera {
             vps.add(tempVp1);
             vps.add(tempVp2);
         }
+        // sort view points based on their location
         Collections.sort(vps);
         
-        System.out.println(vps);
+        //System.out.println(vps);
         
         int numPics = numPics(vps);
         System.out.println(numPics);
-        
-        
-        
-        
-        
-        
-        
-        
-    
-    
-    
     }
     
     /**
@@ -177,8 +168,21 @@ public class camera {
         return (y2-y1)/(x2-x1);
     }
     
+    
     /**
-     * Greedy alg ...
+     */
+    public static int compareDouble(double d1, double d2, double minDif){
+        if(Math.abs(d1-d2) < minDif){
+            return 0;
+        }
+        else{
+            return Double.compare(d1, d2);
+        }
+    }
+    
+    
+    /**
+     * Greedy alg that finds where most objects are visible  
      * 
      * @param vps, array list of view points
      * @return numPics number of pictures needed to photograph all objs
@@ -194,19 +198,26 @@ public class camera {
         int len = vps.size();
         int numVis = 0;
         int maxVis = 0;
-        double pos = -Double.MAX_VALUE;
+        double pos = -Double.NEGATIVE_INFINITY;
         // find location where most objs in view
         for(int i = 0;i < len; i++){
             numVis += vps.get(i).value;
+            // remember position if more objects visible  
             if(numVis > maxVis){
                 pos = vps.get(i).pos;
+                maxVis = numVis;
             }        
         }
+        //debug
+        //System.out.println("Pic at "+ pos+", "+maxVis);
         
-        // mark ojs as used
+        // if obj out of view add it to remaining
         for(int i = 0; i < len ; i++){
-            // if obj out of view add it to remaining
-            if (vps.get(i).obj.viewStart > pos || vps.get(i).obj.viewEnd < pos){
+            boolean aboveStart, belowEnd;
+            aboveStart = compareDouble(vps.get(i).obj.viewStart, pos, MINDIFF) <= 0;
+            belowEnd = compareDouble(vps.get(i).obj.viewEnd, pos, MINDIFF) >= 0;
+            //if (!(vps.get(i).obj.viewStart <= pos && vps.get(i).obj.viewEnd >= pos)){
+            if (!(aboveStart && belowEnd)){
                 remaining.add(vps.get(i));
             }           
         } 
